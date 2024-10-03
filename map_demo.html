@@ -1,0 +1,98 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display a map</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.1.0/ol.css">
+    <script src="https://cdn.jsdelivr.net/npm/ol@v10.1.0/dist/ol.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        const key = 'kIG3Etz3N5YaC3osNUOh';
+
+        const attribution = new ol.control.Attribution({
+            collapsible: false,
+        });
+
+        const source = new ol.source.TileJSON({
+            url: `https://api.maptiler.com/maps/streets-v2/tiles.json?key=${key}`,
+            tileSize: 512,
+            crossOrigin: 'anonymous'
+        });
+
+        const map = new ol.Map({
+            layers: [
+                new ol.layer.Tile({
+                    source: source
+                })
+            ],
+            controls: ol.control.defaults.defaults({ attribution: false }).extend([attribution]),
+            target: 'map',
+            view: new ol.View({
+                constrainResolution: true,
+                center: ol.proj.fromLonLat([105.8542, 21.0285]),
+                zoom: 6
+            })
+        });
+
+        // https://api.maptiler.com/maps/streets-v2/style.json?key=$apiKey
+
+        const innerLayer = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                url: `https://api.maptiler.com/data/7a951303-cd45-49be-b240-2fded4d175eb/features.json?key=${key}`,
+                // url: `https://api.maptiler.com/maps/streets-v2/style.json?key=${key}`,
+                // url: './maps.json',
+                format: new ol.format.GeoJSON(),
+            }),
+            style: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    // color: 'rgba(0, 0, 0, 1)',
+                    color: 'rgba(128, 128, 128, 1)',
+                }),
+                fill: new ol.style.Fill({
+                    color: 'rgba(0, 0, 0, 0)',
+                    // color: 'rgba(128, 128, 128, 1)',
+                }),
+            })
+        });
+        const layer = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                // url: `https://api.maptiler.com/data/7a951303-cd45-49be-b240-2fded4d175eb/features.json?key=${key}`,
+                // url: `https://api.maptiler.com/maps/streets-v2/style.json?key=${key}`,
+                url: './maps.json',
+                format: new ol.format.GeoJSON(),
+            }),
+            style: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    // color: 'rgba(0, 0, 0, 1)',
+                    color: 'rgba(128, 128, 128, 1)',
+                }),
+                fill: new ol.style.Fill({
+                    // color: 'rgba(0, 0, 0, 0)',
+                    color: 'rgba(128, 128, 128, 1)',
+                }),
+            })
+        });
+        map.addLayer(innerLayer);
+        map.addLayer(layer);
+    </script>
+</body>
+
+</html>
