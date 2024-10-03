@@ -1,3 +1,93 @@
+<!-- <html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display a map</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.1.0/ol.css">
+    <script src="https://cdn.jsdelivr.net/npm/ol@v10.1.0/dist/ol.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0; 
+            right: 0;
+            bottom: 0;
+            left: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        const key = 'kIG3Etz3N5YaC3osNUOh';
+
+        const attribution = new ol.control.Attribution({
+            collapsible: false,
+        });
+
+        const source = new ol.source.TileJSON({
+            url: `https://api.maptiler.com/maps/streets-v2/tiles.json?key=${key}`,
+            tileSize: 512,
+            crossOrigin: 'anonymous'
+        });
+        const map = new ol.Map({
+            layers: [
+                new ol.layer.Tile({
+                    source: source
+                })
+            ],
+            controls: ol.control.defaults.defaults({ attribution: false }).extend([attribution]),
+            target: 'map',
+            view: new ol.View({
+                constrainResolution: true,
+                center: ol.proj.fromLonLat([105.8542, 21.0285]),
+                zoom: 6,
+                maxZoom: 10, // Giới hạn zoom tối đa
+            })
+        });
+
+        const innerLayer = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                url: `https://api.maptiler.com/data/7a951303-cd45-49be-b240-2fded4d175eb/features.json?key=${key}`,
+                format: new ol.format.GeoJSON(),
+            }),
+            style: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: 'rgba(0, 0, 0, 0)',
+                }),
+                fill: new ol.style.Fill({
+                    color: 'rgba(0, 0, 0, 0)',
+                }),
+            })
+        });
+        const layer = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                url: './vietmaps.json',
+                format: new ol.format.GeoJSON(),
+            }),
+            style: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: 'rgba(0, 0, 0, 1)',
+                }),
+                fill: new ol.style.Fill({
+                    color: 'rgba(0, 0, 0, 0)',
+                }),
+            })
+        });
+        map.addLayer(innerLayer);
+        map.addLayer(layer);
+        
+    </script>
+</body>
+
+</html> -->
+
 <html>
 
 <head>
@@ -14,7 +104,7 @@
 
         #map {
             position: absolute;
-            top: 0;
+            top: 0; 
             right: 0;
             bottom: 0;
             left: 0;
@@ -37,6 +127,13 @@
             crossOrigin: 'anonymous'
         });
 
+        // Định nghĩa giới hạn hiển thị cho bản đồ (giới hạn vùng Việt Nam đã mở rộng)
+        const vietnamExtent = ol.proj.transformExtent(
+            [100.0, 7.0, 110.5, 23.5], // [minLon, minLat, maxLon, maxLat]
+            'EPSG:4326', // Hệ tọa độ của tọa độ
+            'EPSG:3857'  // Chuyển đổi sang hệ tọa độ Web Mercator
+        );
+
         const map = new ol.Map({
             layers: [
                 new ol.layer.Tile({
@@ -46,52 +143,74 @@
             controls: ol.control.defaults.defaults({ attribution: false }).extend([attribution]),
             target: 'map',
             view: new ol.View({
-                constrainResolution: true,
-                center: ol.proj.fromLonLat([105.8542, 21.0285]),
-                zoom: 6
+                center: ol.proj.fromLonLat([105.8542, 21.0285]), // Trung tâm là Hà Nội
+                zoom: 6,
+                maxZoom: 1000,
+                minZoom: 6,
+                extent: vietnamExtent
             })
         });
 
-        // https://api.maptiler.com/maps/streets-v2/style.json?key=$apiKey
+        // Giới hạn vùng hiển thị khởi tạo trong giới hạn Việt Nam
+        map.getView().fit(vietnamExtent, { size: map.getSize(), maxZoom: 10 });
+
+        // Thêm sự kiện để ngăn người dùng kéo bản đồ ra ngoài vùng Việt Nam
+        map.on('moveend', function() {
+            const view = map.getView();
+            const currentExtent = view.calculateExtent(map.getSize());
+            if (!ol.extent.containsExtent(vietnamExtent, currentExtent)) {
+                view.fit(vietnamExtent, { duration: 100 });
+            }
+        });
 
         const innerLayer = new ol.layer.Vector({
             source: new ol.source.Vector({
                 url: `https://api.maptiler.com/data/7a951303-cd45-49be-b240-2fded4d175eb/features.json?key=${key}`,
-                // url: `https://api.maptiler.com/maps/streets-v2/style.json?key=${key}`,
-                // url: './maps.json',
                 format: new ol.format.GeoJSON(),
             }),
             style: new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                    // color: 'rgba(0, 0, 0, 1)',
                     color: 'rgba(0, 0, 0, 0)',
                 }),
                 fill: new ol.style.Fill({
                     color: 'rgba(0, 0, 0, 0)',
-                    // color: 'rgba(128, 128, 128, 1)',
                 }),
             })
         });
+        
         const layer = new ol.layer.Vector({
             source: new ol.source.Vector({
-                // url: `https://api.maptiler.com/data/7a951303-cd45-49be-b240-2fded4d175eb/features.json?key=${key}`,
-                // url: `https://api.maptiler.com/maps/streets-v2/style.json?key=${key}`,
-                url: './maps.json',
+                url: './map.json',
                 format: new ol.format.GeoJSON(),
             }),
             style: new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                    // color: 'rgba(0, 0, 0, 1)',
-                    color: 'rgba(255, 255, 255, 1)',
+                    color: 'rgba(256, 256, 256, 1)',
                 }),
                 fill: new ol.style.Fill({
-                    // color: 'rgba(0, 0, 0, 0)',
-                    color: 'rgba(255, 255, 255, 1)',
+                    color: 'rgba(256, 256, 256, 1)',
                 }),
             })
         });
+
+        const myanlayer = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                url: './myan.json',
+                format: new ol.format.GeoJSON(),
+            }),
+            style: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: 'rgba(256, 256, 256, 1)',
+                }),
+                fill: new ol.style.Fill({
+                    color: 'rgba(256, 256, 256, 1)',
+                }),
+            })
+        });
+
         map.addLayer(innerLayer);
         map.addLayer(layer);
+        map.addLayer(myanlayer);
         
     </script>
 </body>
